@@ -1,0 +1,535 @@
+---
+title: "Crítica à definição de intervalo de confiança, predição e campo de arbítrio na NBR 14.653-02"
+author:
+- Luiz Fernando Palin Droubi^[SPU/SC, luiz.droubi@planejamento.gov.br]
+- Carlos Augusto Zilli^[UFSC, carloszilli@gmail.com]
+- Willian Zonato^[SPU/SC, willian.zonato@planejamento.gov.br]
+- Norberto Hochheim^[UFSC, hochheim@gmail.com]
+date: "`r format(Sys.Date(), '%d/%m/%Y')`"
+output:
+  html_document:
+    fig_caption: yes
+    keep_md: yes
+  word_document: default
+  pdf_document:
+    includes:
+      in_header: preamble.tex
+    keep_tex: yes
+    latex_engine: xelatex
+    number_sections: yes
+    toc: no
+classoption: a4paper, 12pt
+documentclass: article
+geometry: left=3.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm
+link-citations: yes
+linkcolor: red
+urlcolor: magenta
+citecolor: green
+csl: ABNT_UFPR_2011-Mendeley.csl
+subtitle: 
+bibliography: bibliography.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, dev = "CairoPNG", dpi = 1800, out.width = "70%", 
+                      fig.pos = "H", fig.path = "images/", fig.align = "center", 
+                      warning = FALSE, message = FALSE)
+type <- knitr::opts_knit$get("rmarkdown.pandoc.to")
+library(appraiseR)
+library(mixtools)
+library(MASS)
+library(ggplot2)
+library(cowplot)
+library(sjPlot)
+library(texreg)
+library(papeR)
+library(knitr)
+library(kableExtra)
+```
+
+```{r functions, echo = FALSE}
+brf <- function(x, nsmall = 2,  digits = 2, decimal.mark = ",", big.mark = ".", scientific = FALSE, ...) {
+  format(x, decimal.mark = decimal.mark, big.mark = big.mark, digits = digits, 
+         nsmall = nsmall, scientific = scientific, ...)
+}
+# br <- function(...) {
+#   function(x) brformat(x, ...)
+# }
+reais <- function(prefix = "R$", ...) {
+  function(x) paste(prefix, brformat(x, ...), sep = "")
+}
+pct <- function (x, ...) {
+    if (length(x) == 0) 
+        return(character())
+    x <- plyr::round_any(x, scales:::precision(x)/100)
+    paste0(brformat(100*x, ...), "\\%")
+}
+gg_color_hue <- function(n) {
+  hues = seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[1:n]
+}
+reciprocal_squared_trans <- function() scales::trans_new("reciprocal_squared", 
+                                                         function(x) x^(-2), 
+                                                         function(x) x^(-.5))
+```
+
+```{r}
+data("centro_2015")
+centro_2015$padrao <- as.numeric(centro_2015$padrao)
+```
+
+```{r}
+fit <- lm(log(valor) ~ area_total + quartos + suites + garagens +
+            log(dist_b_mar) + rec(padrao),
+          data = centro_2015, subset = -c(31, 39))
+pfit <- prettify(summary(fit), level = 0.80)
+```
+
+```{r}
+p <- predict(fit, newdata = centro_2015[52, ], 
+             interval = "confidence", level = 0.80, se.fit = TRUE)
+p1 <- predict(fit, newdata = centro_2015[52, ], 
+              interval = "prediction", level = 0.80, se.fit = TRUE)
+```
+
+# ESTUDOS DE CASO
+
+## Dados reais de mercado
+
+Neste estudo são utilizados os dados disponíveis em Hochheim [-@hochheim, 21-22]. O modelo utilizado também foi o obtido no trabalho citado. Para este estudo de caso foi utilizado o software R `r getRversion()` [@R].
+
+```{r coefficients}
+kable(pfit, digits = 3, booktabs = T, 
+      caption = "Coeficientes e estatísticas do modelo adotado.") %>% 
+  kable_styling(latex_options = c("striped", "scale_down"))
+#texreg(fit, digits= 3, ci.force = TRUE, ci.force.level = 0.80, single.row = T)
+```
+
+Um resumo dos coeficientes e estatísticas do modelo pode ser visto na tabela \ref{tab:coefficients}.
+
+Como o modelo foi ajustado com a transformação logarítmica natural, os valores ajustados devem ser retransformados para a escala original. Aqui se adotará a transformação pela mediana da distribuição lognormal, como em Hochheim [-@hochheim].
+
+Na escala log, o valor central obtido foi de `r brf(p$fit[, "fit"], 4)`. Pode-se mostrar que o erro-padrão do ajuste ($s.e.(\hat Y)$) para o bem-avaliando (obtido de acordo com a expressão $\sqrt{x_0'\hat\sigma^2(X'X)^{-1}x_o}$) é de $\approx$ `r brf(p$se.fit, 4)` (também na escala log). O valor de $t_{41}^{10\%}$ é $\approx$ `r brf(qt(.1, 41), 4)` e $t_{41}^{10\%}$ é $\approx$ `r brf(qt(.9, 41), 4)`. Substituindo-se nas expressões abaixo, pode-se calcular os limites do IC para a média, já que é sabido que o intervalo de confiança \@80% foi cálculado com a distribuição t com `r fit$df.residual` graus de liberdade:
+
+$\hat Y_{inf} = \hat Y + t_{41}^{10\%}s.e.(\hat Y)$ e
+$\hat Y_{sup} = \hat Y + t_{41}^{90\%}s.e.(\hat Y)$
+
+Ou seja:
+
+$\hat Y_{inf} = 13,7764 - 1,3025.0,0300$ e
+$\hat Y_{sup} = 13,7764 + 1,3025.0,0300$
+
+Caso se opte por arbitrar o valor da estimativa central (R\$`r brf(exp(p$fit[, "fit"]))`) e o intervalo de confiança, a avaliação intervalar fica limitada pelo último, ou seja, entre R\$`r brf(exp(p$fit[, "lwr"]))` e R\$`r brf(exp(p$fit[, "upr"]))` e o campo de arbítrio ([R\$`r brf(campo_arbitrio(exp(p$fit))[, "C.A.I."])`; R\$`r brf(campo_arbitrio(exp(p$fit))[, "C.A.S."])`]) não pode ser utilizado. 
+
+No entanto, caso seja arbitrado o valor de R\$1.100.000,00 para o bem-avaliando, como em Hochheim [-@hochheim, 73-74], os novos limites intervalares ficam entre R\$1.060.973,75 e R\$`r brf(campo_arbitrio(exp(p$fit))[, "C.A.S."])`.
+
+Transformando-se estes valores para a escala log-natural, tem-se que  `r brf(log(1060973.75), 4)`, `r brf(log(1100000), 4)` e `r brf(log(campo_arbitrio(exp(p$fit))[, "C.A.S."]), 4)`.
+
+Ora, se sabe-se o valor do erro-padrão naquele ponto e o valor central do IC, pode-se calcular o valor de t para os novos valores:
+
+```{r}
+t_inf <- (log(1060973.75)-p$fit[, "fit"])/p$se.fit
+t_arb <- (log(1100000)-p$fit[, "fit"])/p$se.fit
+t_sup <- (log(campo_arbitrio(exp(p$fit))[, "C.A.S."]) - p$fit[, "fit"])/p$se.fit
+```
+
+
+$t_{inf} =$ `r brf(t_inf)`  
+$t_{arbitrado} =$ `r brf(t_arb)`  
+$t_{sup} =$ `r brf(t_sup)`  
+
+Ora, de posse dos t calculados acima, pode-se calcular as suas probabilidades de ocorrência: `r pct(1-pt(t_inf, 41))`, `r pct(1-pt(t_arb, 41))` e `r pct(1-pt(t_sup, 41))`. Ou seja, de acordo com o IC originalmente calculado, o valor arbitrado, o valor inferior e o valor calculado tem probabilidade baixíssima de ocorrer.
+
+Isso, contudo, apenas significa que os valores inferior, arbitrado e superior encontram-se muito acima do intervalo de confiança para a *média*, ou seja, significa apenas que os valores citados, "arbitrados" são superiores à média do mercado. 
+
+Se, por outro lado, considera-se o intervalo de predição:
+
+$\hat Y_{inf} =$ `r brf(p$fit[, "fit"] + qt(.1, 41)*sqrt((p$residual.scale^2 + p$se.fit^2)), 4)`
+$\hat Y_{sup} =$ `r brf(p$fit[, "fit"] + qt(.9, 41)*sqrt((p$residual.scale^2 + p$se.fit^2)), 4)`
+
+Na escala original, `r brf(exp(p1$fit[, "lwr"]))` $\leq$ `r brf(exp(p1$fit[, "fit"]))` $\leq$ `r brf(exp(p1$fit[, "upr"]))`.
+
+Porém, neste caso o IP estaria limitado pelo campo de arbítrio, pois este está no intervalo [R\$`r brf(campo_arbitrio(exp(p$fit))[, "C.A.I."])`, R\$`r brf(campo_arbitrio(exp(p$fit))[, "C.A.S."])`].
+
+Da mesma maneira que foi feito para o IC, pode-se calcular a que probabilidade está associado o campo de arbítrio em relação ao IP:
+
+```{r}
+t_infCA <- (log(campo_arbitrio(exp(p$fit))[, "C.A.I."]) - p$fit[, "fit"])/sqrt((p$residual.scale^2 + p$se.fit^2))
+t_supCA <- (log(campo_arbitrio(exp(p$fit))[, "C.A.S."]) - p$fit[, "fit"])/sqrt((p$residual.scale^2 + p$se.fit^2))
+```
+
+  
+$t_{inf-CA} =$ `r brf(t_infCA)`  
+$t_{sup-CA} =$ `r brf(t_supCA)`
+
+Ou seja, de acordo com o IP, o limite inferior do CA encontra-se no percentil `r pct(pt(t_infCA, fit$df.residual))` e o limite superior do CA no percentil `r pct(pt(t_supCA, fit$df.residual))`, de maneira que, portanto, o C.A. não pode ser inteiramente utilizado, apesar de seus limites se encontrarem em percentis confortáveis do IP.
+
+A fórmula para o cálculo do intervalo de predição pode ser escritada seguinte forma:
+
+$$\hat y_0 \pm t_{n-k}^{\alpha/2}\sqrt{\sigma^2+s.e.^2(\hat y_o)}$$
+Deve-se notar que, fixado o valor central $\hat y_0$ e a amplitude do intervalo, pode-se calcular o valor do termo $\sqrt{\sigma^2+s.e.^2(\hat y_o)}$  em função do $t$ especificado. No limite, sabe-se que a distribuição $t$ aproxima-se assintoticamente da distribuição normal, que será adotada aqui preliminarmente, por simplicidade.
+
+## Dados randômicos
+
+Imagine-se que em um determinado modelo previamente ajustado, foi estimado o valor de um bem em R\$1.000.000,00. Imagine-se então que o modelo possui graus de liberdade suficiente para que o intervalo de predição possa ser assumido normalmente distribuído. Isto implica que o termo $\sqrt{\sigma^2+s.e.^2(\hat y_o)}$ possui os seguintes valores, dependendo da amplitude do IP calculado: 
+
+```{r}
+# Para distribuição Normal
+yhat <- 10^6
+se1 <- .15*yhat/qnorm(.9)
+se2 <- .20*yhat/qnorm(.9)
+se3 <- .25*yhat/qnorm(.9)
+zinf1 <- -.15*yhat/se1
+zinf2 <- -.15*yhat/se2
+zinf3 <- -.15*yhat/se3
+zsup1 <- .15*yhat/se1
+zsup2 <- .15*yhat/se2
+zsup3 <- .15*yhat/se3
+qinf1 <- pnorm(zinf1)
+qinf2 <- pnorm(zinf2)
+qinf3 <- pnorm(zinf3)
+qsup1 <- pnorm(zsup1)
+qsup2 <- pnorm(zsup2)
+qsup3 <- pnorm(zsup3)
+```
+
+|Amplitude IP| $\sqrt{\sigma^2+s.e.^2(\hat y_o)}$|Semi-amplitude do CA| $Z_{inf}$    | $Z_{sup}$    | $p_{inf}$    | $p_{sup}$    |  
+|:----------:|----------------------------------:|-------------------:|-------------:|-------------:|-------------:|-------------:|
+| 30%        |`r brf(se1)`                       | 150.000            |`r brf(zinf1)`|`r brf(zsup1)`|`r pct(qinf1)`|`r pct(qsup1)`|
+| 40%        |`r brf(se2)`                       | 150.000            |`r brf(zinf2)`|`r brf(zsup2)`|`r pct(qinf2)`|`r pct(qsup2)`|
+| 50%        |`r brf(se3)`                       | 150.000            |`r brf(zinf3)`|`r brf(zsup3)`|`r pct(qinf3)`|`r pct(qsup3)`|
+
+O mesmo pode ser feito para a distribuição t com 40 graus de liberdade, por exemplo:
+
+```{r}
+# Para distribuição t com 40 graus de liberdade
+yhat <- 10^6
+se1 <- .15*yhat/qt(.9, 40)
+se2 <- .20*yhat/qt(.9, 40)
+se3 <- .25*yhat/qt(.9, 40)
+tinf1 <- -.15*yhat/se1
+tinf2 <- -.15*yhat/se2
+tinf3 <- -.15*yhat/se3
+tsup1 <- .15*yhat/se1
+tsup2 <- .15*yhat/se2
+tsup3 <- .15*yhat/se3
+qinf1 <- pt(tinf1, 40)
+qinf2 <- pt(tinf2, 40)
+qinf3 <- pt(tinf3, 40)
+qsup1 <- pt(tsup1, 40)
+qsup2 <- pt(tsup2, 40)
+qsup3 <- pt(tsup3, 40)
+```
+
+|Amplitude IP| $\sqrt{\sigma^2+s.e.^2(\hat y_o)}$|Semi-amplitude do CA| $t_{inf}$    | $t_{sup}$    | $p_{inf}$         | $p_{sup}$    |  
+|:----------:|----------------------------------:|-------------------:|-------------:|-------------:|------------------:|-------------:|
+| 30%        |`r brf(se1)`                        | 150.000            |`r brf(tinf1)` |`r brf(tsup1)` |`r pct(qinf1)`     |`r pct(qsup1)`|
+| 40%        |`r brf(se2)`                        | 150.000            |`r brf(tinf2)` |`r brf(tsup2)` |`r pct(qinf2)`     |`r pct(qsup2)`|
+| 50%        |`r brf(se3)`                        | 150.000            |`r brf(tinf3)` |`r brf(tsup3)` |`r pct(qinf3)`     |`r pct(qsup3)`|
+
+Ou ainda com 10 graus de liberdade:
+
+```{r}
+# Para distribuição t com 10 graus de liberdade
+yhat <- 10^6
+se1 <- .15*yhat/qt(.9, 10)
+se2 <- .20*yhat/qt(.9, 10)
+se3 <- .25*yhat/qt(.9, 10)
+tinf1 <- -.15*yhat/se1
+tinf2 <- -.15*yhat/se2
+tinf3 <- -.15*yhat/se3
+tsup1 <- .15*yhat/se1
+tsup2 <- .15*yhat/se2
+tsup3 <- .15*yhat/se3
+qinf1 <- pt(tinf1, 10)
+qinf2 <- pt(tinf2, 10)
+qinf3 <- pt(tinf3, 10)
+qsup1 <- pt(tsup1, 10)
+qsup2 <- pt(tsup2, 10)
+qsup3 <- pt(tsup3, 10)
+```
+
+|Amplitude IP| $\sqrt{\sigma^2+s.e.^2(\hat y_o)}$|Semi-amplitude do CA| $t_{inf}$         | $t_{sup}$    | $p_{inf}$    | $p_{sup}$    |  
+|:----------:|----------------------------------:|-------------------:|------------------:|-------------:|-------------:|-------------:|
+| 30%        |`r brf(se1)`                        | 150.000            |`r brf(tinf1)`      |`r brf(tsup1)` |`r pct(qinf1)`|`r pct(qsup1)`|
+| 40%        |`r brf(se2)`                        | 150.000            |`r brf(tinf2)`      |`r brf(tsup2)` |`r pct(qinf2)`|`r pct(qsup2)`|
+| 50%        |`r brf(se3)`                        | 150.000            |`r brf(tinf3)`      |`r brf(tsup3)` |`r pct(qinf3)`|`r pct(qsup3)`|
+
+
+Pode-se notar nas tabelas acima que a influência do número de graus de liberdade existe, mas é moderada, caso $(T-k) \geq 10$. Em todos os casos, a variação mais relevante é a das diferentes amplitudes dos intervalos de predição, *i.e.*, importa mais a variabilidade populacional.
+
+```{r}
+se <- matrix(nrow = 60, ncol = 3)
+tinf <- matrix(nrow = 60, ncol = 3)
+tsup <- matrix(nrow = 60, ncol = 3)
+pinf <- matrix(nrow = 60, ncol = 3)
+psup <- matrix(nrow = 60, ncol = 3)
+yhat <- 10^6
+for (j in 1:3){
+  for (i in 1:60){
+    amp <- ifelse(j == 1, .15, ifelse(j == 2, .20, .25))
+    se[i, j] <- amp*yhat/qt(.9, i)
+    tinf[i, j] <- -.15*yhat/se[i, j]
+    tsup[i, j] <- .15*yhat/se[i, j]
+    pinf[i, j] <- pt(tinf[i, j], i)
+    psup[i, j] <- pt(tsup[i, j], i)
+  }
+}
+```
+
+Já o impacto da variabilidade do mercado pode ser vista graficamente na figura \ref{fig:CAs}, onde os pontos e a linha em vermelho representam o valor ajustado e os limites do Campo de Arbítrio, a área em azul claro representa o intervalo de predição \@ 80%, a reta azul é a reta de regressão em relação aos dados amostrais e, finalmente, a área cinza representa o intervalo de confiança para esta regressão, para vários cenários hipotéticos. 
+
+Primeiramente, foi imaginado um cenário hipotético de mercado equilibrado, onde, por acaso, o Campo de Arbítrio se ajusta perfeitamente à variabilidade do mercado e poderia ser utilizado sem restrições. No segundo cenário, apenas foi considerado um intervalo mais amplo de validade para o modelo, porém com mesma variabilidade. No terceiro cenário, chamado de "Parado", foi considerado um mercado com baixíssima variabilidade, para ilustrar o fato que, nestes casos, o Campo de Arbítrio pode superar os limites populacionais em ambos os sentidos. Finalmente, no quarto cenário, foi imaginado um mercado aquecido, com alta variabilidade, onde os limites do Campo de Arbítrio de $\pm$ 15% não chegam nem à metade do intervalo de predição.
+
+```{r}
+N <- 200 # Number of random samples
+set.seed(1)
+# Target parameters for univariate normal distributions
+rho <- -0.6
+muy <- 3000; sy1 <- 400; sy2 <- 175; sy3 <- 1000
+mux <- 150; sx1 <- 25; sx2 <- 50
+
+# Parameters for bivariate normal distribution
+mu <- c(mux, muy) # Mean 
+# Covariance Matrixs
+sigma1 <- matrix(c(sx1^2, sy1*sx1*rho, sy1*sx1*rho, sy1^2), 2)
+sigma2 <- matrix(c(sx2^2, sy1*sx2*rho, sy1*sx2*rho, sy1^2), 2)
+sigma3 <- matrix(c(sx1^2, sy2*sx1*rho, sy2*sx1*rho, sy2^2), 2)
+sigma4 <- matrix(c(sx1^2, sy3*sx1*rho, sy3*sx1*rho, sy3^2), 2)
+
+# Function to draw ellipse for bivariate normal data
+# ellipse_bvn <- function(bvn, alpha){
+#   Xbar <- apply(bvn , 2, mean)
+#   S <- cov(bvn)
+#   ellipse(Xbar, S, alpha = alpha, col = "red")
+# }
+bvn1 <- cbind(mvrnorm(N, mu = mu, Sigma = sigma1), Mercado = 1)
+bvn2 <- cbind(mvrnorm(N, mu = mu, Sigma = sigma2), Mercado = 2)
+bvn3 <- cbind(mvrnorm(N, mu = mu, Sigma = sigma3), Mercado = 3)
+bvn4 <- cbind(mvrnorm(N, mu = mu, Sigma = sigma4), Mercado = 4)
+```
+
+```{r}
+bvn <- rbind(bvn1, bvn2, bvn3, bvn4)
+colnames(bvn) <- c("Area", "VU", "Mercado")
+bvn <- as.data.frame(bvn)
+m1 <- lm(VU~Area, data = bvn[which(bvn$Mercado == 1), ])
+m2 <- lm(VU~Area, data = bvn[which(bvn$Mercado == 2), ])
+m3 <- lm(VU~Area, data = bvn[which(bvn$Mercado == 3), ])
+m4 <- lm(VU~Area, data = bvn[which(bvn$Mercado == 4), ])
+p1 <- predict(m1, interval = "prediction", level = 0.80)
+p2 <- predict(m2, interval = "prediction", level = 0.80)
+p3 <- predict(m3, interval = "prediction", level = 0.80)
+p4 <- predict(m4, interval = "prediction", level = 0.80)
+p <- rbind(p1, p2, p3, p4) 
+bvn <- cbind(bvn, p)
+```
+
+
+```{r CAs, out.width="95%", fig.cap = "Comparação do campo de arbítrio em diferentes realidades mercadológicas."}
+bvn$Mercado <- factor(bvn$Mercado, levels = c(1, 2, 3, 4),
+                         labels = c("Equilibrio 1", "Equilibrio 2", 
+                                    "Parado", "Aquecido"))
+qs <- c(.1, .9)
+CA <- data.frame(x = c(mux, mux, mux), y =c(.85*muy, muy, 1.15*muy))
+ggplot(bvn, aes(Area, VU)) + 
+  geom_point(shape = 3, color = "grey", size = 2) +
+  geom_quantile(quantiles = qs, colour = "green", weight = 1) +
+  geom_ribbon(aes(ymin = lwr, ymax = upr), 
+               fill = "blue", alpha = 0.1) + 
+  stat_ellipse(level = 0.975) + 
+  stat_smooth(method = "lm", se = TRUE, level = 0.80, weight = 1) + 
+  geom_segment(aes(x = x[1], y = y[1], xend = x[3], yend = y[3], 
+                   colour = "red"), 
+               data = CA) +
+  geom_point(data = CA, aes(x = x, y = y), colour = "red", size = 1.5) +
+  facet_wrap(~Mercado) + 
+  theme(legend.position = "none")
+```
+
+Como se pode notar, é possível que o campo de arbítrio seja um bom parâmetro para o arbítrio do valor de mercado de um imóvel, porém isso só ocorrerá se, por acaso, a variabilidade do mercado for da mesma magnitude da amplitude do campo de arbítrio.
+
+Se, contudo, o mercado tiver menos variabilidade a utilização dos limites do C.A. estará sub ou superavaliando o bem-avaliando para aquele mercado. Já no caso de um mercado com maior variabilidade, a utilização dos limites do C.A. pode ser insuficiente para dar ao avaliador a possibilidade de arbitrar valores nas faixas mais distantes da média do mercado, apesar destes imóveis serem parte da realidade do mercado.
+
+```{r}
+fit1 <- lm(VU ~ Area, data = bvn[which(bvn$Mercado == "Equilibrio 1"), ])
+fit2 <- lm(VU ~ Area, data = bvn[which(bvn$Mercado == "Equilibrio 2"), ])
+fit3 <- lm(VU ~ Area, data = bvn[which(bvn$Mercado == "Parado"), ])
+fit4 <- lm(VU ~ Area, data = bvn[which(bvn$Mercado == "Aquecido"), ])
+p1 <- predict(fit1, newdata = data.frame(Area = 150), interval = "prediction", level = 0.80, se.fit = T)
+p2 <- predict(fit2, newdata = data.frame(Area = 150), interval = "prediction", level = 0.80, se.fit = T)
+p3 <- predict(fit3, newdata = data.frame(Area = 150), interval = "prediction", level = 0.80, se.fit = T)
+p4 <- predict(fit4, newdata = data.frame(Area = 150), interval = "prediction", level = 0.80, se.fit = T)
+s1 <- summary(fit1)
+s2 <- summary(fit2)
+s3 <- summary(fit3)
+s4 <- summary(fit4)
+p_ca1 <- c(1 - pt(.15*p1$fit[, "fit"]/sqrt(p1$residual.scale^2 + p1$se.fit^2), p1$df), 
+           pt(.15*p1$fit[, "fit"]/sqrt(p1$residual.scale^2 + p1$se.fit^2), p1$df))
+p_ca2 <- c(1 - pt(.15*p2$fit[, "fit"]/sqrt(p2$residual.scale^2 + p2$se.fit^2), p2$df), 
+           pt(.15*p1$fit[, "fit"]/sqrt(p2$residual.scale^2 + p2$se.fit^2), p2$df))
+p_ca3 <- c(1 - pt(.15*p1$fit[, "fit"]/sqrt(p3$residual.scale^2 + p3$se.fit^2), p3$df), 
+           pt(.15*p1$fit[, "fit"]/sqrt(p3$residual.scale^2 + p3$se.fit^2), p3$df))
+p_ca4 <- c(1 - pt(.15*p4$fit[, "fit"]/sqrt(p4$residual.scale^2 + p4$se.fit^2), p4$df), 
+           pt(.15*p4$fit[, "fit"]/sqrt(p4$residual.scale^2 + p4$se.fit^2), p4$df))
+```
+
+Os coeficientes de determinação dos vários cenários estudados podem ser vistos na tabela abaixo:
+
+| Cenário      |$R^2$                   |
+|:-------------|-----------------------:|
+| Equilíbrio 1 |`r brf(s1$adj.r.squared)`|
+| Equilíbrio 2 |`r brf(s2$adj.r.squared)`|
+| Parado       |`r brf(s3$adj.r.squared)`|
+| Aquecido     |`r brf(s4$adj.r.squared)`|
+
+A tabela abaixo mostra com mais precisão a magnitude do problema: efetuou-se a estimativa para os valores centrais ($Area = 150m^2$) com o intervalo de predição \@80%. Nos dois primeiros cenários, os limites do IP e do CA são praticamente equivalentes. Porém, no terceiro cenário o campo de arbítrio ficaria muito além do IP, enquanto no quarto cenário o mesmo seria insuficiente para chegar aos extremos do mesmo, pois estaria limitado pelo IP.
+
+| Cenário      | Estimativa Central      |  $IP_{inf}$             | $IP_{sup}$              | Amplitude                     |  $p_{CA - inf}$ |  $p_{CA - sup}$ |
+|:-------------|------------------------:|------------------------:|------------------------:|------------------------------:|----------------:|----------------:|
+| Eq. 1        | `r brf(p1$fit[, "fit"])` | `r brf(p1$fit[, "lwr"])` | `r brf(p1$fit[, "upr"])` | `r pct(amplitude(p1$fit)/100)`|`r pct(p_ca1[1])`|`r pct(p_ca1[2])`|
+| Eq. 2        | `r brf(p2$fit[, "fit"])` | `r brf(p2$fit[, "lwr"])` | `r brf(p2$fit[, "upr"])` | `r pct(amplitude(p2$fit)/100)`|`r pct(p_ca2[1])`|`r pct(p_ca2[2])`|
+| Parado       | `r brf(p3$fit[, "fit"])` | `r brf(p3$fit[, "lwr"])` | `r brf(p3$fit[, "upr"])` | `r pct(amplitude(p3$fit)/100)`|`r pct(p_ca3[1])`|`r pct(p_ca3[2])`|
+| Aquecido     | `r brf(p4$fit[, "fit"])` | `r brf(p4$fit[, "lwr"])` | `r brf(p4$fit[, "upr"])` | `r pct(amplitude(p4$fit)/100)`|`r pct(p_ca4[1])`|`r pct(p_ca4[2])`|
+
+
+
+
+Finalmente, para averiguar a pertinência da adoção do IC para a avaliação intervalar e para a aferição do Grau de Precisão, foi elaborada a tabela abaixo:
+
+```{r}
+p1 <- predict(fit1, newdata = data.frame(Area = 150), interval = "confidence", level = 0.80, se.fit = T)
+p2 <- predict(fit2, newdata = data.frame(Area = 150), interval = "confidence", level = 0.80, se.fit = T)
+p3 <- predict(fit3, newdata = data.frame(Area = 150), interval = "confidence", level = 0.80, se.fit = T)
+p4 <- predict(fit4, newdata = data.frame(Area = 150), interval = "confidence", level = 0.80, se.fit = T)
+p_ca1 <- c(1 - pt(.15*p1$fit[, "fit"]/p1$se.fit, p1$df), 
+           pt(.15*p1$fit[, "fit"]/p1$se.fit, p1$df))
+p_ca2 <- c(1 - pt(.15*p2$fit[, "fit"]/p2$se.fit, p2$df),
+           pt(.15*p2$fit[, "fit"]/p2$se.fit, p2$df))
+p_ca3 <- c(1 - pt(.15*p3$fit[, "fit"]/p3$se.fit, p3$df),
+           pt(.15*p3$fit[, "fit"]/p3$se.fit, p3$df))
+p_ca4 <- c(1 - pt(.15*p4$fit[, "fit"]/p4$se.fit, p4$df),
+           pt(.15*p4$fit[, "fit"]/p4$se.fit, p4$df))
+```
+
+
+| Cenário      | Estimativa Central      | $IC_{inf}$              | $IC_{sup}$              | Amplitude                     | $p_{CA - inf}$ |  $p_{CA - sup}$ |
+|:-------------|------------------------:|------------------------:|------------------------:|------------------------------:|----------------:|----------------:|
+| Equilíbrio 1 | `r brf(p1$fit[, "fit"])` | `r brf(p1$fit[, "lwr"])` | `r brf(p1$fit[, "upr"])` | `r pct(amplitude(p1$fit)/100)`|`r pct(p_ca1[1])`|`r pct(p_ca1[2])`|
+| Equilíbrio 2 | `r brf(p2$fit[, "fit"])` | `r brf(p2$fit[, "lwr"])` | `r brf(p2$fit[, "upr"])` | `r pct(amplitude(p2$fit)/100)`|`r pct(p_ca2[1])`|`r pct(p_ca2[2])`|
+| Parado       | `r brf(p3$fit[, "fit"])` | `r brf(p3$fit[, "lwr"])` | `r brf(p3$fit[, "upr"])` | `r pct(amplitude(p3$fit)/100)`|`r pct(p_ca3[1])`|`r pct(p_ca3[2])`|
+| Aquecido     | `r brf(p4$fit[, "fit"])` | `r brf(p4$fit[, "lwr"])` | `r brf(p4$fit[, "upr"])` | `r pct(amplitude(p4$fit)/100)`|`r pct(p_ca4[1])`|`r pct(p_ca4[2])`|
+
+Como se pode notar, em nenhum dos cenários o Campo de Arbítrio seria menos restritivo do que o IC, mesmo no cenário de Mercado Aquecido. A probabilidade de ocorrência de que os limites inferior e superior do campo de arbítrio estejam dentro do intervalo de confiança para a média é praticamente zero.
+
+## Dados lognormais
+
+
+```{r}
+y <- log(10^6)
+s <- sqrt(log(10^6/990000))
+moda <- exp(y - s^2)
+mediana <- exp(y)
+media <- exp(y + s^2/2)
+zs <- qnorm(.9)*s
+ip <- c(y - zs, y + zs)
+ip_moda <- exp(ip - s^2)
+ip_mediana <- exp(ip)
+ip_media <- exp(ip + s^2/2)
+```
+
+Imagine-se um modelo de regressão linear onde a variável resposta tenha sido transformada com a função logarítmo natural e que, com este modelo, tenham sido obtidas as seguintes estimativas para o bem avaliando:
+
+$$ln(\hat{Y}) =$$`r brf(y, 4)` 
+
+$$\hat\sigma =$$`r brf(s, 4)`
+
+Então, com este modelo, o avaliador teria obtido os seguintes valores com o seu software de avaliação:
+
+|CA/IP     |Moda              | Mediana             | Média             |
+|:---------|-----------------:|--------------------:|------------------:|
+|          |`r brf(moda)`      |`r brf(mediana)`      |`r brf(media)`      |
+|$CA_{inf}$|`r brf(.85*moda)`  |`r brf(.85*mediana)`  |`r brf(.85*media)`  |
+|$CA_{sup}$|`r brf(1.15*moda)` |`r brf(1.15*mediana)` |`r brf(1.15*media)` |
+|$IP_{inf}$|`r brf(ip_moda[1])`|`r brf(ip_mediana[1])`|`r brf(ip_media[1])`|
+|$IP_{sup}$|`r brf(ip_moda[2])`|`r brf(ip_mediana[2])`|`r brf(ip_media[2])`|
+
+Por simplicidade, aqui foi admitido que o erro na estimativa de $\hat{y}$ é zero ($se(\hat y) = 0$). Com esta hipótese, o cálculo do Intervalo de Predição ficou resumido a:
+
+$$IP = \hat{Y} \pm Z_{90}\hat{\sigma}$$
+Pode ser calculado a que percentil da distribuição lognormal corresponde cada valor adotado. Oos resultados podem ser vistos na tabela abaixo:
+
+```{r}
+p_med <- plnorm(mediana, meanlog = y, sdlog = s)
+p_moda <- plnorm(moda, meanlog = y, sdlog = s)
+p_media <- plnorm(media, meanlog = y, sdlog = s)
+p_ca_moda <- c(plnorm(.85*moda, meanlog = y, sdlog = s),
+               plnorm(1.15*moda, meanlog = y, sdlog = s))
+p_ca_med <- c(plnorm(.85*mediana, meanlog = y, sdlog = s),
+              plnorm(1.15*mediana, meanlog = y, sdlog = s))
+p_ca_media <- c(plnorm(.85*media, meanlog = y, sdlog = s),
+                plnorm(1.15*media, meanlog = y, sdlog = s))
+p_ip_moda <- c(plnorm(ip_moda[1], meanlog = y, sdlog = s),
+               plnorm(ip_moda[2], meanlog = y, sdlog = s))
+p_ip_med <- c(plnorm(ip_mediana[1], meanlog = y, sdlog = s),
+               plnorm(ip_mediana[2], meanlog = y, sdlog = s))
+p_ip_media <- c(plnorm(ip_media[1], meanlog = y, sdlog = s),
+               plnorm(ip_media[2], meanlog = y, sdlog = s))
+```
+|CA/IP     |Moda                | Mediana             | Média                |
+|:---------|-------------------:|--------------------:|---------------------:|
+|          |`r pct(p_moda)`      |`r pct(p_med)`      |`r pct(p_media)`      |
+|$CA_{inf}$|`r pct(p_ca_moda[1])`|`r pct(p_ca_med[1])`|`r pct(p_ca_media[1])`|
+|$CA_{sup}$|`r pct(p_ca_moda[2])`|`r pct(p_ca_med[2])`|`r pct(p_ca_media[2])`|
+|$IP_{inf}$|`r pct(p_ip_moda[1])`|`r pct(p_ip_med[1])`|`r pct(p_ip_media[1])`|
+|$IP_{sup}$|`r pct(p_ip_moda[2])`|`r pct(p_ip_med[2])`|`r pct(p_ip_media[2])`|
+   
+Pode-se notar que a adoção da estimativa pela moda e do CA inferior corresponde ao percentil `r pct(p_ca_moda[1])`, ou seja, um percentil muito baixo da distribuição encontrada pelo modelo.
+
+No outro extremo, está a adoção do limite superior do CA e da estimativa pela média, encontrando-se num percentil extremamente alto da distribuição encontrada (`r pct(p_ca_media[2])`).
+
+Mesmo para a mediana, neste caso, a utilização dos valores extremos do CA leva a percentis muito extremos da distribuição de probabilidades (`r pct(p_ca_med[1])` e `r pct(p_ca_med[2])`).
+
+Enquanto isto, a adoção da estimativa pela mediana e a utilização do IP leva aos percentis que consideram-se adequados, ou seja, os percentis 10% e 90%.
+
+### Avaliação Intervalar segundo a atual NBR14.653-02
+
+Segundo a atual NBR14.653-02, o avaliador teria várias alternativas para a definição da estimativa final, dentre as quais elencam-se:
+
+1. Adoção da estimativa pela moda e do limite inferior do CA:
+
+Se o avaliador optasse pela moda, adotando o limite inferior do CA, o intervalo final da avaliação, segundo a atual normativa, seria: [`r brf(.85*moda)`; `r brf(ip_moda[2] - .15*moda)`]. Ou seja, fazendo-se esta escolha, o intervalo final obtido estaria entre os percentis `r pct(p_ca_moda[1])` e `r pct(plnorm(ip_moda[2] - .15*moda, meanlog = y, sdlog = s))`.
+
+2. Adoção da mediana, com limite inferior do CA:
+
+Se o avaliador adotasse a mediana como estimativa de tendência central (lembre-se que para o cálculo da mediana não se utiliza o valor de $\hat \sigma$), e o limite inferior do CA, o avaliador teria como intervalo final: [`r brf(.85*mediana)`; `r brf(ip_mediana[2] - .15*mediana)`]. Ou seja, fazendo-se esta escolha, o intervalo final obtido estaria entre os percentis `r pct(p_ca_med[1])` e `r pct(plnorm(ip_mediana[2] - .15*mediana, meanlog = y, sdlog = s))`.
+
+3. Simples adoção da mediana:
+
+Se o avaliador adotasse simplesmente a mediana, teria como intervalo final da avaliação: [`r brf(ip_mediana[1])`, `r brf(ip_mediana[2])`]. Ou seja, fazendo-se esta escolha, o intervalo final obtido estaria entre os percentis `r pct(p_ca_med[1])` e `r pct(p_ca_med[2])`.
+
+4. Adoção da mediana, com limite superior do CA:
+
+Se o avaliador adotasse a mediana como estimativa de tendência central e o limite superior do CA, o avaliador teria como intervalo final: [`r brf(ip_mediana[1] + .15*mediana)`; `r brf(1.15*mediana)`]. Ou seja, fazendo-se esta escolha, o intervalo final obtido estaria entre os percentis `r pct(plnorm(ip_mediana[1]  + .15*mediana, meanlog = y, sdlog = s))` e `r pct(p_ca_med[2])`.
+
+5. Adoção da média, com limite superior do CA:
+
+Finalmente, se o avaliador optasse pela média e o intervalo superior do CA, ele teria como intervalo final: [`r brf(ip_media[1] + .15*media)`; `r brf(1.15*media)`]. Ou seja, fazendo-se esta escolha, o intervalo final obtido estaria entre os percentis `r pct(plnorm(ip_media[1]  + .15*media, meanlog = y, sdlog = s))` e `r pct(p_ca_media[2])`.
+   
+# CONCLUSÃO
+
+A NBR14.653-01 [-@NBR1465301] e NBR14.653-02 [-@NBR1465302] fariam melhor em definir valor médio ($\mu(Y| X= t)$), intervalo de confiança para a média ($IC(\mu(t)$), valo.r arbitrado ($\hat Y$) e intervalo de predição para os valores arbitrados.
+
+O avaliador deveria ter o poder de arbitrar valores para os bem-avaliandos dentro do intervalo de predição! Claro, pois o intervalo de confiança é para a média, mas o avaliador deveria ter condições de dizer se o bem-avaliando encontra-se acima ou abaixo dela. Por outro lado, o avaliador nunca deveria ter o poder de arbitrar valores para a média fora do IC! Isto é absurdo, pois foi feito uma inferência para a estimação da média e seu intervalo de confiança, mas a NBR14.653-2 permite ao avaliador arbitrar que a média encontra-se fora do IC! Isto não faz qualquer sentido científico. 
+
+O Campo de Arbítrio do avaliador não é um bom parâmetro para a arbitragem de valores, dado que o mesmo é constante ($\pm$ 15%), independente da variabilidade do mercado. Ora, como se mostrou no estudo de caso, com um modelo muito bem ajustado, causa espécie que o valor do CA fique restrito aos percentis `r pct(pt(t_infCA, fit$df.residual))` e `r pct(pt(t_supCA, fit$df.residual))` do IP. Desta maneira se está restringindo desnecessariamente o avaliador naquele intervalo, sendo que o avaliador poderia ter maior flexibilidade. Imagine-se o caso de um modelo menos ajustado, onde o IP seja de aproximadamente 50%: pode ocorrer de o C.A. ficar entre percentis muito próximos à média, ou seja, sabendo-se que há uma grande variabilidade no mercado, restringe-se o avaliador àqueles 15%, que muitas vezes é pouco. Por que não se restringir o avaliador aos percentis 10% e 90% do IP?
+
+A NBR14.653-02 tem um problema conceitual: ela mistura o conceito de valor médio e intervalo de confiança para a média, com o conceito de valor ajustado e intervalo de predição. 
+
+O valor médio e o intervalo de confiança para a média é de pouco interesse para o avaliador: estes conceitos tem valor mais explicativo. Pode-se utilizar o valor médio e seu intervalo de confiança para responder a seguinte pergunta: qual o valor médio de um apartamento com tais características naquele mercado? Para responder a esta pergunta de uma maneira qualitativa, deve-se utilizar o conceito de intervalo de confiança: um apartamento com tais características, naquela localidade, vale em média R\$3.000,00/m2 $\pm$ R\$500,00 ao nível de confiança de 80%. A simples resposta que um apartamento de tais características vale em média R\$3.000,00/m2 não é uma boa resposta, pois não descreve a variabilidade do mercado. O IC dá uma idéia da variabilidade em torno da média. 
+
+Existem vários ramos da ciência que se valem destes conceitos, como é o caso da medicina: "o modelo comprovou que pessoas com IMC entre 25 e 30 vivem em média 10 anos a mais do que pessoas com IMC>35, ao nível de 90%". Apesar de ser uma média para a população, dificilmente alguém poderia dizer quantos anos viverá uma determinada pessao com IMC igual ou superior a 35, contudo, pois a variabilidade é muito maior. 
+
+Na Engenharia de Avaliações, contudo, apenas raramente se está interessado nestas funções descritivas da inferência clássica. Mais frequentemente se está interessado em conhecer, à partir de uma amostra, o valor para um novo elemento do mercado, não o valor médio do mercado de bens com aquelas características. Por isso o avaliador é obrigado a fazer uma vistoria no bem-avaliando, já que então ele pode intuir se o imóvel estará acima ou abaixo da média para aquele mercado. Se fosse de outra maneira, não seria necessário ao avaliador realizar a vistoria, bastaria ele dizer que em média tal imóvel vale R\$3.000,00 o metro quadrado $\pm$ R\$500,00 \@80%.
+
+# REFERÊNCIAS {-}
