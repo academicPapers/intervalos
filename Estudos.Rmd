@@ -7,10 +7,6 @@ author:
 - Norberto Hochheim^[UFSC, hochheim@gmail.com]
 date: "`r format(Sys.Date(), '%d/%m/%Y')`"
 output:
-  html_document:
-    fig_caption: yes
-    keep_md: yes
-  word_document: default
   pdf_document:
     includes:
       in_header: preamble.tex
@@ -18,6 +14,10 @@ output:
     latex_engine: xelatex
     number_sections: yes
     toc: no
+  word_document: default
+  html_document:
+    fig_caption: yes
+    keep_md: yes
 classoption: a4paper, 12pt
 documentclass: article
 geometry: left=3.5cm,right=2.5cm,top=2.5cm,bottom=2.5cm

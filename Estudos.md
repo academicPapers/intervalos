@@ -5,7 +5,7 @@ author:
 - Carlos Augusto Zilli^[UFSC, carloszilli@gmail.com]
 - Willian Zonato^[SPU/SC, willian.zonato@planejamento.gov.br]
 - Norberto Hochheim^[UFSC, hochheim@gmail.com]
-date: "21/08/2019"
+date: "22/08/2019"
 output:
   html_document:
     fig_caption: yes
