@@ -1,0 +1,66 @@
+---
+title: "Crítica à Avaliação Intervalar"
+subtitle: "Segundo a NBR-14.653-02"
+author: "Luiz Fernando Palin Droubi"
+institute: "droubi.tech"
+date: "2019/10/04 (updated: `r Sys.Date()`)"
+output:
+  xaringan::moon_reader:
+    lib_dir: libs
+    css: [default, cobreap.css]
+    nature:
+      highlightStyle: github
+      highlightLines: true
+      countIncrementalSlides: false
+      ratio: "16:9"
+    seal: false
+---
+class: title-slide
+
+```{r setup, include=FALSE}
+options(htmltools.dir.version = FALSE)
+knitr::opts_chunk$set(echo = FALSE, warning = FALSE, message = FALSE,
+                      fig.align = "center", out.width = "80%", fig.path = "images/",
+                      eval = TRUE)
+library(knitr)
+library(kableExtra)
+library(ggplot2)
+library(ggthemes)
+theme_set(theme_few())
+library(qrnn)
+library(tidyr)
+library(appraiseR)
+library(quantreg)
+library(broom)
+library(cowplot)
+```
+
+.pull-left[
+]
+
+.pull-right[
+<br><br><br><br>
+### Crítica à Avaliação Intervalar na NBR 14.653-02
+
+#### Autores:
+
+* Luiz Fernando Palin Droubi
+* Carlos Augusto Zilli
+* Willian Zonatto
+* Norberto Hochheim
+]
+
+---
+
+## Em uma dimensão
+
+Seja o problema de se estimar a média de uma população com base em uma amostra
+
+
+
+---
+class: primary, center, middle
+
+# Obrigado!
+
+
