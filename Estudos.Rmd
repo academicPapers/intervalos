@@ -39,6 +39,9 @@ library(appraiseR)
 library(mixtools)
 library(MASS)
 library(ggplot2)
+library(ggthemes)
+theme_set(theme_tufte())
+library(ggforce)
 library(cowplot)
 library(sjPlot)
 library(texreg)
@@ -337,7 +340,9 @@ ggplot(bvn, aes(Area, VU)) +
   geom_quantile(quantiles = qs, colour = "green", weight = 1) +
   geom_ribbon(aes(ymin = lwr, ymax = upr), 
                fill = "blue", alpha = 0.1) + 
-  stat_ellipse(level = 0.975) + 
+  stat_ellipse(level = 0.995) + 
+  # geom_mark_ellipse() +
+  # geom_ellipse(aes(x0 = 150, y0 = 3000, a = 1000, b = 150, angle = -pi/3)) +
   stat_smooth(method = "lm", se = TRUE, level = 0.80, weight = 1) + 
   geom_segment(aes(x = x[1], y = y[1], xend = x[3], yend = y[3], 
                    colour = "red"), 

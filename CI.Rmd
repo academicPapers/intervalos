@@ -1,0 +1,138 @@
+---
+title: "IC e IP"
+author: "Luiz Fernando Palin Droubi"
+date: "`r format(Sys.Date(), '%d/%m/%Y')`"
+output:
+  pdf_document: 
+    includes:
+      in_header: preamble.tex
+    keep_tex: yes
+    latex_engine: xelatex
+    number_sections: yes
+    toc: no
+  html_document:
+    fig_caption: yes
+    keep_md: yes
+classoption: a4paper, 11pt
+documentclass: article
+geometry: left=1.5cm,right=1.5cm,top=1.5cm,bottom=1.5cm
+link-citations: yes
+linkcolor: red
+urlcolor: magenta
+citecolor: green
+csl: ABNT_UFPR_2011-Mendeley.csl
+bibliography: bibliography.bib
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE, fig.align = "center", fig.path = "images/",
+                      dev = "CairoPNG", dpi = 300, fig.pos = "H", out.width = "45%",
+                      warning = FALSE, message = FALSE
+                      )
+library(papeR)
+library(summarytools)
+library(stargazer)
+library(knitr)
+library(mosaic)
+library(ggplot2)
+library(ggthemes)
+theme_set(theme_few())
+```
+
+```{r functions}
+brformat <- function(x, digits = 2, nsmall = 2, decimal.mark = ",", big.mark = ".", scientific = FALSE, ...) {
+  format(x, decimal.mark = decimal.mark, big.mark = big.mark, digits = digits, 
+         nsmall = nsmall, scientific = scientific, ...)
+}
+br <- function(...) {
+  function(x) brformat(x, ...)
+}
+reais <- function(prefix = "R$", ...) {
+  function(x) paste(prefix, brformat(x, ...), sep = "")
+}
+porcento <- function (x) {
+    if (length(x) == 0) 
+        return(character())
+    x <- plyr::round_any(x, scales:::precision(x)/100)
+    paste0(x * 100, "\\%")
+}
+gg_color_hue <- function(n) {
+  hues = seq(15, 375, length = n + 1)
+  hcl(h = hues, l = 65, c = 100)[1:n]
+}
+reciprocal_squared_trans <- function() scales::trans_new("reciprocal_squared", function(x) x^(-2), function(x) x^(-.5))
+```
+
+# Introdução
+
+O conceito de intervalo de confiança está relacionado ao conceito de erro-padrão. É mais fácil entender estes conceitos com a inferência clássica para uma média simples. Posteriormente, é possível extender estes conceitos para a regressão linear. Na inferência clássica, para estimar os parâmetros para uma determinada população, suposta normal com média $\mu$ e variância $\sigma^2$, utiliza-se a média amostral $\overline W$ e a variância amostral $S^2$, definidas da seguinte maneira [@matloff2017, 81]:
+
+$$\overline W = \frac{1}{n}\sum_{i = 1}^n W_i$$
+$$S^2 = \frac{1}{n-1}\sum_{i = 1}^n (W_i - \overline W)^2$$
+Neste caso, o intervalo de confiança para a média, para um nível $\alpha$ de confiança  pode ser, supondo que o valor de $n$ é suficientemente grande, tal que a distribuição possa ser considerada normal, definido por:
+
+$$\overline W \pm Z_{1 - (1 - \alpha)/2}s.e.(\overline W)$$
+onde $s.e.(\overline W)$ é o erro-padrão do estimador $\overline W$, igual a $S/\sqrt{n}$ e $Z_{1 - (1 - \alpha)/2}$ é o quantil da distribuição normal correspondente ao nível de confiança desejado. Ou seja, ao nível de 95%, tem-se:
+
+$$\overline W \pm 1,96\frac{S}{\sqrt{n}}$$
+
+Se o valor de $n$ é baixo, utiliza-se a distribuição $t$, com $n$ graus de liberadade, tal que o IC pode ser calculado por:
+
+$$\overline W \pm t_{1 - (1 - \alpha)/2}^n \frac{S}{\sqrt{n}}$$
+
+# Exemplo
+
+```{r}
+set.seed(2)
+vu1 <- rnorm(50, mean = 3000, sd = 250)
+vu2 <- rnorm(250, mean = 3000, sd = 500)
+w1 <- mean(vu1)
+w2 <- mean(vu2)
+s1 <- sd(vu1)
+s2 <- sd(vu2)
+se1 <- s1/sqrt(length(vu1))
+se2 <- s2/sqrt(length(vu2))
+ci1 <- c(w1 + qt(.10, length(vu1 - 1))*se1, 
+         w1 + qt(.90, length(vu1 - 1))*se1
+         )
+ci2 <- c(w2 + qt(.10, length(vu2 - 1))*se2, 
+         w2 + qt(.90, length(vu2 - 1))*se2
+         )
+cp1 <- c(w1 + qt(.10, length(vu1 - 1))*sqrt(s1^2 + se1^2),
+         w1 + qt(.90, length(vu1 - 1))*sqrt(s1^2 + se1^2)
+         )
+cp2 <- c(w2 + qt(.10, length(vu2 - 1))*sqrt(s2^2 + se2^2),
+         w2 + qt(.90, length(vu2 - 1))*sqrt(s2^2 + se2^2)
+         )
+amplitude1 <- (ci1[2] - ci1[1])/w1
+amplitude2 <- (ci2[2] - ci2[1])/w2
+```
+
+Imagine duas populações (P1 e P2) com distribuição normal com médias ($\mu_1$ e $\mu_2$) e variâncias ($\sigma^2_1$ e $\sigma^2_2$) desconhecidas. Para a estimação da média de P1, foram amostrados `r length(vu1)` dados, enquanto para P2 foram amostrados `r length(vu2)` dados. Na figura \ref{fig:hist} podem ser vistos os histogramas das duas variáveis.
+
+```{r hist, fig.show='hold', fig.cap = "Histogramas para as amostragens da população P1 e P2."}
+histogram(vu1, type = "count")
+histogram(vu2, type = "count")
+```
+
+Note-se que a variância da população P2 é muito maior do que a variância da população P1. Para a amostra de P1, foram calculadas a média amostral $\overline w_1=$ `r brformat(w1)` e o desvio-padrão amostral $s_1=$ `r brformat(s1)`. Para a amostra de P2, também foram calculadas a média amostral $\overline w_2=$ `r brformat(w2)` e o desvio-padrão amostral $s_2=$ `r brformat(s2)`. Pode-se mostrar que o intervalo de confiança para a média da população P1 é: [`r brformat(ci1)`]. Já o IC para a média da população P2 é: [`r brformat(ci2)`]. As amplitudes dos intervalos de confiança para a média das populações P1 e P2, ao nível de 80%, são, `r porcento(amplitude1)` e `r porcento(amplitude2)`, respectivamente. 
+
+# Interpretação
+
+Intervalos de confiança são para a média! Ou seja, apesar da população P2 apresentar uma maior variância que a primeira, a sua média foi ajustada mais precisamente que a média da população P1. Isto ocorreu apenas porque a amostragem de P2 é muito mais ampla do que a amostragem de P1. O intervalo de predição para um novo valor da população P1, ao nível de 80%, estará entre `r brformat(cp1[1])` e `r brformat(cp1[2])`. Já para a população P2, também ao nível de 80%, o IP estará entre `r brformat(cp2[1])` e `r brformat(cp2[2])`. Ou seja, o intervalo de predição da P2 é mais amplo do que o IP da P1, o inverso do que acontece com os ICs. Por outro ângulo, temos que levar em conta que a probabilidade de um valor específico da população ocorra, digamos, o valor inferior do Campo de arbítrio, que em P1 = $0,85*\overline w_1$, é de, aproximadamente, $p_{CA_{inf}}$ = `r porcento(pt((.85*w1 - w1)/sqrt(s1^2 + se1^2), df = length(vu1)))`, enquanto em P2 esta probabilidade é de `r porcento(pt((.85*w2 - w2)/sqrt(s2^2 + se2^2), df = length(vu2)))`. Estas probabilidades foram calculadas assumindo distribuição t de student. Porém, assumindo distribuição normal, este cálculo fica facilitado: basta calcular a probabilidade de ocorrência do valor citado na curva normal com média $w_1$ e desvio-padrão $s_1$. Considerando-se a distribuição normal, tem-se: $p_{CA_{inf}}$ = `r porcento(pnorm(.85*w1, mean = w1, sd = s1))` para P1 e $p_{CA_{inf}}$ = `r porcento(pnorm(.85*w2, mean = w2, sd = s2))` para P2. Como a amostragem de P2 é mais ampla, o cálculo com a distribuição normal é mais próximo do valor "exato", calculado com a distribuição t. A tabela abaixo resumo os valores calculados.
+
+|População| Amostragem  | média ajustada  | desvio-padrão ajustado  | IC                  | IP                  | $p_{CAinf}$                                                         |
+|:--------|------------:|----------------:|------------------------:|:-------------------:|:-------------------:|--------------------------------------------------------------------:|
+| P1      | 50          | `r brformat(w1)`| `r brformat(s1)`        | [`r brformat(ci1)`] | [`r brformat(cp1)`] |`r porcento(pt((.85*w1 - w1)/sqrt(s1^2 + se1^2), df = length(vu1)))` |
+| P2      | 250         | `r brformat(w2)`| `r brformat(s2)`        | [`r brformat(ci2)`] | [`r brformat(cp2)`] |`r porcento(pt((.85*w2 - w2)/sqrt(s2^2 + se2^2), df = length(vu2)))` |
+
+O que fica patente é que o IC nada tem a ver com Campo de Arbítrio, pois a amplitude do IC muda com a amostragem: mesmo numa população de maior variância, é possível encontrar ICs de baixa amplitude. O efeito da amostragem na probabilidade de ocorrência de um novo valor para a população, no entanto, é apenas uma questão de precisão numérica, ou seja, por mais preciso que possa ser a amostragem, isto praticamente não afetará a amplitude do IP, que está correlacionado com a variância populacional.
+
+A média da população não é suficiente para descrevê-la. Também é preciso saber sua variância. De posse da média e da variância, pode-se calcular a probabilidade de novos valores naquela população. Com o conhecimento apenas da média não se pode ter a dimensão da variância populacional, essencial para descrever a população. Então, ao avaliar um novo imóvel a partir de um modelo, deve-se ter em mente que o correto é utilizar IP e não IC. Usando IP têm-se acesso a todo um intervalo de variação possível de dados dentro da população. Dentro do IP, então, conhecedor do imóvel-avaliando, pode-se escolher o percentil mais adequado para o posicionamento do imóvel-avaliando perante a população.
+
+Por exemplo, se numa determinada avaliação o bem-avaliando tiver como características: área de 250m2, 3 quartos, 2 garagens e alto padrão de acabamento, de acordo com as variáveis do modelo, caberá ao avaliador, primeiramente: calcular o valor médio dos imóveis com estas características, segundo o modelo. Calcular o IP naquele ponto e, em função das características não expressas no modelo , definir em que percentil do mercado encontra-se o imóvel-avaliando. Por exemplo, imagine-se que, além das características citadas o bem-avaliando ainda esteja em um andar mais alto (o que não foi modelado), não tenha vizinho em cima, tenha vista privilegiada, etc, porque não dizer que este imóvel encontra-se no limite superior do IP \@80%?
+
+
+
+# Referências {-}
+
