@@ -5,6 +5,7 @@
     <meta charset="utf-8" />
     <meta name="author" content="Luiz Fernando Palin Droubi" />
     <link href="libs/remark-css/default.css" rel="stylesheet" />
+    <link href="libs/remark-css/ninjutsu.css" rel="stylesheet" />
     <link rel="stylesheet" href="cobreap.css" type="text/css" />
   </head>
   <body>
@@ -25,17 +26,319 @@ class: title-slide
 
 * Luiz Fernando Palin Droubi
 * Carlos Augusto Zilli
-* Willian Zonatto
 * Norberto Hochheim
+* Willian Zonatto
 ]
 
 ---
+class: primary, center, middle
 
-## Em uma dimensão
+## Inferência Estatística
 
-Seja o problema de se estimar a média de uma população com base em uma amostra
+---
+class: primary
+
+## Inferência Estatística
+
+É o conjunto de técnicas e procedimentos que permitem dar ao pesquisador um **grau
+de confiabilidade**, de confiança, nas afirmações que faz para a população, baseadas
+nos resultados das amostras.
+
+--
+### Média simples
+
+Dada uma variável aleatória `\(X\)` com média `\(\mu(X)\)` e variância `\(\text{Var}(X) = \sigma^2\)` desconhecidas, estimar `\(\hat \mu(X)\)`.
+
+É sabido que `\(\hat \mu(X) = \mathbb{E}(X) = \bar{x} = \frac{1}{n}\sum x_i\)`.
+
+--
+
+## Qual a precisão de `\(\hat \mu(x)\)`?
+
+---
+class: primary
+
+## Variância
+
+Pode-se mostrar que a variância da média amostral `\(\sigma_\bar{x}^2\)` é igual à variância populacional `\(\sigma\)` dividida pelo tamanho da amostra `\(n\)`, ou seja:
+
+`$$\text{Var}(\bar{x}) = \sigma_\bar{x}^2 = \frac{\sigma^2}{n}$$`
+--
+
+Se a variância populacional `\(\sigma\)` é desconhecida, esta deve ser estimada. Pode-se mostrar que um estimador não-viesado da variância populacional é:
+
+`$$s^2 = \frac{1}{n-1}\sum_{i = 1}^n (x_i - \overline x)^2$$`
+`$$\therefore \sigma_\bar{x}^2 = \frac{s^2}{n} \quad ou \quad \sigma_\bar{x} = \frac{s}{\sqrt{n}}$$`
+
+`\(\sigma_\bar{x}\)` é conhecido como o erro-padrão do estimador `\(\bar x\)`.
+
+---
+class: primary
+
+## Intervalo de Confiança
+
+Erro-padrão é uma medida de erro de um estimador. O intervalo de confiança é construído em torno de algumas vezes o erro-padrão deste estimador.
+
+`$$IC_{\hat \mu} = \hat \mu \pm Z_\alpha s.e.(\hat \mu)$$`
+Dependendo do nível de confiança desejado, a amplitude do IC pode ser maior ou menor.
+
+--
+### Exemplos
+
+`$$IC_{95} \approx \hat \mu \pm 1,96 s.e.(\hat \mu)$$`
+`$$IC_{90} \approx \hat \mu \pm 1,64 s.e.(\hat \mu)$$`
+
+`$$IC_{80} \approx \hat \mu \pm 1,28 s.e.(\hat \mu)$$`
+---
+class: primary
+
+## Atenção
+
+Se o número de dados da amostra é pequeno, utiliza-se a distribuição t de Student.
+
+Alguns estatísticos aconselham:
+
+* Se `\(n \leq 30\)`, utiliza-se a distribuição t de Student
+* Se `\(n &gt; 30\)`, pode-se assumir a normalidade.
+
+---
+class: primary
+
+## Exemplo
+
+&lt;img src="images/xcnorm-1.png" width="80%" style="display: block; margin: auto;" /&gt;
+
+---
+class: primary, center, middle
 
 
+
+&lt;img src="images/ci-1.png" width="80%" style="display: block; margin: auto;" /&gt;
+
+---
+class: primary, center, middle
+
+&lt;img src="images/xcnorm1-1.png" width="80%" style="display: block; margin: auto;" /&gt;
+
+---
+class: primary
+
+|População| Amostragem  | `\(\hat{\mu}\)` | `\(\sigma_{\bar{x}}\)`   | IC             | IP             | `\(p_{CAinf}\)`                                              |
+|:--------|------------:|-----------:|---------------------:|:--------------:|:--------------:|---------------------------------------------------------:|
+| P1      | 50          | 3.017,28| 282,42          | [2.965,41, 3.069,16] | [2.646,85, 3.387,72] |5.94\% |
+| P2      | 250         | 3.010,69| 264,55          | [2.989,19, 3.032,19] | [2.670,08, 3.351,30] |4.48\% |
+
+
+---
+class: primary, center, middle
+
+## Regressão Linear
+
+
+---
+class: primary, center, middle
+
+![](https://saylordotorg.github.io/text_introductory-statistics/section_14/88a6e0919d8617c025826c1e187ad591.jpg)
+
+---
+class: primary
+
+## Média Condicional
+
+A equação de regressão linear nada mais é do que a estimativa da função média
+condicional de `\(Y|X\)`.
+
+`$$\mathbb{E}(Y|X) = X\beta + \epsilon$$` 
+
+Ou
+
+`$$y = \hat \mu(X) = X\beta + \epsilon$$`
+
+---
+class: primary
+
+## Inferência clássica na regressão linear
+
+
+Satisfeitas as hipóteses da inferências estatística clássica, *i.e.*, homoscedasticidade, normalidade, etc, temos:
+
+### Estimativa Central
+
+`$$\hat y_0 = x_0^T \hat \beta$$`
+### Erro-padrão
+
+`$$se(\hat y_0) = se(x_0^T \hat \beta) = \sqrt{\text{Var}(x_0^T\hat\beta)} =   \sqrt{\hat \sigma^2 x_0^T (X^TX)^{-1}x_0}$$`
+### Intervalo de Confiança
+
+`$$IC = \hat y_0 \pm t_{0, 90, n-k-1} \hat \sigma \sqrt{x_0^T (X^TX)^{-1}x_0}$$`
+---
+class: primary
+
+### Intervalo de Predição
+
+Para o intervalo de predição, adiciona-se à incerteza do estimador, a variância da 
+população:
+
+`$$IP = \hat y_0 \pm t_{0, 90, n-k-1} \sqrt{\text{Var}(x_0^T\hat\beta + \epsilon)}$$`
+Se os erros forem independentes, então pode-se concluir que `\(\text{Var}(x_o^T \hat \beta + \epsilon) = \text{Var}(x_o^T \hat \beta) + \text{Var}(\epsilon)\)`.
+
+Então:
+
+`$$IP = \hat y_0 \pm t_{0, 90, n-k-1} \sqrt{\text{Var}(x_0^T\hat\beta) + \text{Var}( \epsilon)}$$`
+`$$IP = \hat y_0 \pm t_{0, 90, n-k-1} \sqrt{\hat \sigma^2 x_0^T (X^TX)^{-1}x_0 + \hat \sigma^2}$$`
+`$$IP = \hat y_0 \pm t_{0, 90, n-k-1} \hat \sigma \sqrt{x_0^T (X^TX)^{-1}x_0 + 1}$$`
+
+---
+class: primary, center, middle
+
+![](predictionvsconfidence.png)
+
+---
+class: primary, center, middle
+
+## NBR 14.653-02
+
+
+---
+class: primary
+
+### Estimativa de tendência central
+
+Quando for adotada a estimativa de tendência central para a avaliação, o intervalo de valores admissíveis deve estar limitado simultaneamente: 
+
+A) ao intervalo de predição ou ao intervalo de confiança de 80 % para a estimativa de tendência central; 
+
+B) ao campo de arbítrio.
+
+---
+class: primary, center, middle
+
+![](Imagem1.png)
+
+---
+class: primary
+
+### Valor arbitrado
+
+Quando for adotado o valor arbitrado, o intervalo de valores admissíveis deve estar limitado simultaneamente: 
+
+A) ao intervalo em torno do valor arbitrado com amplitude igual à do intervalo de predição ou ao intervalo de confiança de 80% para a estimativa de tendência central; 
+
+B) ao campo de arbítrio em torno da estimativa de tendência central.
+
+
+---
+class: primary, center, middle
+
+![](Imagem2.png)
+
+---
+class: primary, middle
+
+## NBR 14.653-02
+
+### Aplicação em diferentes cenários
+
+.center[
+&lt;img src="Cenario_1.png" width="33%" /&gt;&lt;img src="Cenario_2.png" width="33%" /&gt;&lt;img src="Cenario_3.png" width="33%" /&gt;
+]
+
+---
+background-image: url(CAs.png)
+background-size: contain
+
+---
+class: primary
+
+## Dados lognormais
+
+&lt;table&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt;   &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Moda &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Mediana &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Media &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; estimativa_central &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 989.980 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 999.989 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.005.032 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; ca_inf &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 841.483 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 849.991 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 854.277 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; ca_sup &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.138.477 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.149.988 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.155.787 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; ip_inf &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 870.567 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 879.369 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 883.804 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; ip_sup &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.125.772 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.137.154 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.142.889 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+***
+
+&lt;table&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt;   &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Moda &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Mediana &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Media &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; estimativa_central &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 46,0 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 50,0 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 52,0 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; ca_inf &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 4,3 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 5,3 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 5,8 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; ca_sup &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 90,2 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 91,8 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 92,6 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; ip_inf &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 8,4 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 10,0 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 10,9 &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; ip_sup &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 88,1 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 90,0 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 90,9 &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
 
 ---
 class: primary, center, middle
