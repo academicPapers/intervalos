@@ -6,6 +6,7 @@
     <meta name="author" content="Luiz Fernando Palin Droubi" />
     <link href="libs/remark-css/default.css" rel="stylesheet" />
     <link href="libs/remark-css/ninjutsu.css" rel="stylesheet" />
+    <script src="libs/kePrint/kePrint.js"></script>
     <link rel="stylesheet" href="cobreap.css" type="text/css" />
   </head>
   <body>
@@ -89,6 +90,7 @@ Dependendo do nível de confiança desejado, a amplitude do IC pode ser maior ou
 `$$IC_{90} \approx \hat \mu \pm 1,64 s.e.(\hat \mu)$$`
 
 `$$IC_{80} \approx \hat \mu \pm 1,28 s.e.(\hat \mu)$$`
+
 ---
 class: primary
 
@@ -109,11 +111,15 @@ class: primary
 &lt;img src="images/xcnorm-1.png" width="80%" style="display: block; margin: auto;" /&gt;
 
 ---
-class: primary, center, middle
+class: primary
+
+## Duas amostragens
 
 
 
-&lt;img src="images/ci-1.png" width="80%" style="display: block; margin: auto;" /&gt;
+.center2[
+&lt;img src="images/ci-1.png" width="100%" style="display: block; margin: auto;" /&gt;
+]
 
 ---
 class: primary, center, middle
@@ -123,14 +129,17 @@ class: primary, center, middle
 ---
 class: primary
 
-|População| Amostragem  | `\(\hat{\mu}\)` | `\(\sigma_{\bar{x}}\)`   | IC             | IP             | `\(p_{CAinf}\)`                                              |
-|:--------|------------:|-----------:|---------------------:|:--------------:|:--------------:|---------------------------------------------------------:|
-| P1      | 50          | 3.017,28| 282,42          | [2.965,41, 3.069,16] | [2.646,85, 3.387,72] |5.94\% |
-| P2      | 250         | 3.010,69| 264,55          | [2.989,19, 3.032,19] | [2.670,08, 3.351,30] |4.48\% |
+## Resumindo
+
+|População| `\(n\)` | `\(\hat{\mu}\)`| `\(\sigma_{\bar{x}}\)`   | IC             | IP             |   `\(CA_{inf}\)`   | `\(p_{CAinf}\)`                                              |
+|:--------|----:|-----------:|---------------------:|:--------------:|:--------------:|---------------:|--------------------------------------------------------:|
+| P1      | 50  | 3.017,28| 39,94          | [2.965,41, 3.069,16] | [2.646,85, 3.387,72] |2.564,69 |5.94\% |
+| P1      | 250 | 3.010,69| 16,73          | [2.989,19, 3.032,19] | [2.670,08, 3.351,30] |2.559,08 |4.48\% |
 
 
 ---
 class: primary, center, middle
+
 
 ## Regressão Linear
 
@@ -150,9 +159,11 @@ condicional de `\(Y|X\)`.
 
 `$$\mathbb{E}(Y|X) = X\beta + \epsilon$$` 
 
-Ou
+Como `\(\mathbb{E}(\epsilon) = 0\)`
 
-`$$y = \hat \mu(X) = X\beta + \epsilon$$`
+`$$\hat \mu(Y|X) = X\beta \\
+\epsilon = Y - \hat \mu(Y|X) \\
+Y =  X\beta + \epsilon$$`
 
 ---
 class: primary
@@ -164,20 +175,26 @@ Satisfeitas as hipóteses da inferências estatística clássica, *i.e.*, homosc
 
 ### Estimativa Central
 
-`$$\hat y_0 = x_0^T \hat \beta$$`
+`$$\hat y_0 = \hat \mu(x_0)= x_0^T \hat \beta$$`
 ### Erro-padrão
 
 `$$se(\hat y_0) = se(x_0^T \hat \beta) = \sqrt{\text{Var}(x_0^T\hat\beta)} =   \sqrt{\hat \sigma^2 x_0^T (X^TX)^{-1}x_0}$$`
 ### Intervalo de Confiança
 
 `$$IC = \hat y_0 \pm t_{0, 90, n-k-1} \hat \sigma \sqrt{x_0^T (X^TX)^{-1}x_0}$$`
+
 ---
 class: primary
 
 ### Intervalo de Predição
 
-Para o intervalo de predição, adiciona-se à incerteza do estimador, a variância da 
-população:
+Na predição de valores, estamos interessado na variância da população como um 
+todo e não apenas na variância da média condicional, ou seja, queremos saber:
+
+`$$\text{Var}(y) = \text{Var}(x_0 \hat \beta + \epsilon)$$`
+
+Portanto, para o cálculo do intervalo de predição, adiciona-se à incerteza do 
+estimador, a variância da população:
 
 `$$IP = \hat y_0 \pm t_{0, 90, n-k-1} \sqrt{\text{Var}(x_0^T\hat\beta + \epsilon)}$$`
 Se os erros forem independentes, então pode-se concluir que `\(\text{Var}(x_o^T \hat \beta + \epsilon) = \text{Var}(x_o^T \hat \beta) + \text{Var}(\epsilon)\)`.
@@ -196,6 +213,7 @@ class: primary, center, middle
 ---
 class: primary, center, middle
 
+
 ## NBR 14.653-02
 
 
@@ -204,7 +222,7 @@ class: primary
 
 ### Estimativa de tendência central
 
-Quando for adotada a estimativa de tendência central para a avaliação, o intervalo de valores admissíveis deve estar limitado simultaneamente: 
+Quando for adotada a estimativa de tendência central para a avaliação, o intervalo de valores admissíveis deve estar limitado **simultaneamente**: 
 
 A) ao intervalo de predição ou ao intervalo de confiança de 80 % para a estimativa de tendência central; 
 
@@ -220,7 +238,8 @@ class: primary
 
 ### Valor arbitrado
 
-Quando for adotado o valor arbitrado, o intervalo de valores admissíveis deve estar limitado simultaneamente: 
+Quando for adotado o valor arbitrado, o intervalo de valores admissíveis deve 
+estar limitado **simultaneamente**: 
 
 A) ao intervalo em torno do valor arbitrado com amplitude igual à do intervalo de predição ou ao intervalo de confiança de 80% para a estimativa de tendência central; 
 
@@ -242,6 +261,203 @@ class: primary, middle
 .center[
 &lt;img src="Cenario_1.png" width="33%" /&gt;&lt;img src="Cenario_2.png" width="33%" /&gt;&lt;img src="Cenario_3.png" width="33%" /&gt;
 ]
+
+---
+class: primary, center, middle
+
+
+# Estudos de casos
+
+---
+class: primary
+
+### Dados de mercado
+
+&lt;table class="table" style="margin-left: auto; margin-right: auto;"&gt;
+&lt;caption&gt;Coeficientes e estatísticas do modelo adotado.&lt;/caption&gt;
+ &lt;thead&gt;
+  &lt;tr&gt;
+   &lt;th style="text-align:left;"&gt;   &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Estimate &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; CI (lower) &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; CI (upper) &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; Std. Error &lt;/th&gt;
+   &lt;th style="text-align:right;"&gt; t value &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt; Pr(&amp;gt;|t|) &lt;/th&gt;
+   &lt;th style="text-align:left;"&gt;     &lt;/th&gt;
+  &lt;/tr&gt;
+ &lt;/thead&gt;
+&lt;tbody&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; (Intercept) &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 13.564 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 13.264 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 13.864 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.230 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 58.847 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; &amp;lt;0.001 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; *** &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; area_total &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.001 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.001 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.002 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.000 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 5.113 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; &amp;lt;0.001 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; *** &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; quartos &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.164 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.118 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.210 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.035 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 4.626 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; &amp;lt;0.001 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; *** &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; suites &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.061 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.017 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.105 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.034 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 1.810 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; 0.078 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; . &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; garagens &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.209 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.165 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.252 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.033 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 6.247 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; &amp;lt;0.001 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; *** &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; log(dist_b_mar) &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; -0.141 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; -0.176 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; -0.105 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.027 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; -5.174 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; &amp;lt;0.001 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; *** &lt;/td&gt;
+  &lt;/tr&gt;
+  &lt;tr&gt;
+   &lt;td style="text-align:left;"&gt; rec(padrao) &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; -0.563 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; -0.700 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; -0.426 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; 0.105 &lt;/td&gt;
+   &lt;td style="text-align:right;"&gt; -5.360 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; &amp;lt;0.001 &lt;/td&gt;
+   &lt;td style="text-align:left;"&gt; *** &lt;/td&gt;
+  &lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+
+--
+
+
+
+
+***
+
+| Estimativa           |              Intervalo de valores admissíveis     |  Campo de Arbítrio                                      |
+|---------------------:|--------------------------------------------------:|--------------------------------------------------------:|
+|R$961.660,64 |  [R$924.768,13; R$1.000.024,94]    | [R$817.411,55; R$1.105.909,74] |
+|R$1.100.000,00        |  [R$1.060.973,75; R$1.105.909,74        | [R$817.411,55; R$1.105.909,74] |
+
+---
+class: primary
+
+## Probabilidades associadas
+  
+  
+#### Média
+
+
+
+| Valor        | `\(t\)`           | `\(p\)`                    |
+|-------------:|---------------|-----------------------:|
+| Inferior     | 3,27|0.108\%|
+| Arbitrado    | 4,48|0.00298\%|
+| Superior     | 4,65|0.0017\%|
+
+--
+
+#### População
+
+
+
+| Valor        | Valor                   | `\(t\)`                    | `\(p\)`                      |
+|-------------:|-------------------------|-----------------------:|-------------------------:| 
+| Inferior (CA)| 817.411,55 |-1,17        |12.5\%  |
+| Arbitrado    | 1.100.000,00            |0,96          |83\%    |
+| Superior (CA)| 1.105.909,74 |1,00        |83.9\%  |
+
+---
+class: primary
+
+## Regressão Quantílica
+
+
+
+| Quantílica (72,5%)     | NBR                    |
+|-----------------------:|-----------------------:|
+| 1.096.396,16    | 1.100.000,00           |
+| 1.022.899,48  | 1.060.973,75           |
+| 1.175.173,68 | 1.105.909,74|
+
+
+---
+class: primary
+
+#### Dados com distribuição Normal
+
+`\(\hat \mu(x_0) =\)` R$1.000.000,00. Hipóteses sobre a inferência: `\(\mathcal{N}\)`, `\(t_{40}\)`, `\(t_{10}\)` 
+
+
+
+
+|Amplitude IP| `\(\sqrt{\sigma^2+s.e.^2(\hat y_o)}\)`|Semi-amplitude do CA| `\(Z_{inf}\)`    | `\(Z_{sup}\)`    | `\(p_{inf}\)`    | `\(p_{sup}\)`    |  
+|:----------:|----------------------------------:|-------------------:|-------------:|-------------:|-------------:|-------------:|
+| 30%        |117.045,62                       | 150.000            |-1,28|1,28|10\%|90\%|
+| 40%        |156.060,83                       | 150.000            |-0,96|0,96|16.8\%|83.2\%|
+| 50%        |195.076,04                       | 150.000            |-0,77|0,77|22.1\%|77.9\%|
+
+
+
+***
+
+|Amplitude IP| `\(\sqrt{\sigma^2+s.e.^2(\hat y_o)}\)`|Semi-amplitude do CA| `\(t_{inf}\)`    | `\(t_{sup}\)`    | `\(p_{inf}\)`         | `\(p_{sup}\)`    |  
+|:----------:|----------------------------------:|-------------------:|-------------:|-------------:|------------------:|-------------:|
+| 30%        |115.112,15                        | 150.000            |-1,30 |1,30 |10\%     |90\%|
+| 40%        |153.482,87                        | 150.000            |-0,98 |0,98 |16.7\%     |83.3\%|
+| 50%        |191.853,58                        | 150.000            |-0,78 |0,78 |21.9\%     |78.1\%|
+
+
+
+***
+
+|Amplitude IP| `\(\sqrt{\sigma^2+s.e.^2(\hat y_o)}\)`|Semi-amplitude do CA| `\(t_{inf}\)`         | `\(t_{sup}\)`    | `\(p_{inf}\)`    | `\(p_{sup}\)`    |  
+|:----------:|----------------------------------:|-------------------:|------------------:|-------------:|-------------:|-------------:|
+| 30%        |109.314,81                        | 150.000            |-1,37      |1,37 |10\%|90\%|
+| 40%        |145.753,09                        | 150.000            |-1,03      |1,03 |16.4\%|83.6\%|
+| 50%        |182.191,36                        | 150.000            |-0,82      |0,82 |21.5\%|78.5\%|
+
+
+---
+class: primary, center, middle
+
+
+# Dados criados randomicamente
 
 ---
 background-image: url(CAs.png)
@@ -342,6 +558,7 @@ class: primary
 
 ---
 class: primary, center, middle
+
 
 # Obrigado!
     </textarea>

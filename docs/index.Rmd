@@ -27,11 +27,13 @@ library(papeR)
 library(summarytools)
 library(stargazer)
 library(knitr)
+library(kableExtra)
 library(mosaic)
 library(ggplot2)
 library(ggthemes)
 theme_set(theme_bw())
 library(cowplot)
+library(quantreg)
 ```
 
 .pull-left[
@@ -108,6 +110,7 @@ $$IC_{95} \approx \hat \mu \pm 1,96 s.e.(\hat \mu)$$
 $$IC_{90} \approx \hat \mu \pm 1,64 s.e.(\hat \mu)$$
 
 $$IC_{80} \approx \hat \mu \pm 1,28 s.e.(\hat \mu)$$
+
 ---
 class: primary
 
@@ -134,7 +137,9 @@ xcnorm(.8, mean = m, sd = s, return = 'plot', system = 'gg') %>%
 ```
 
 ---
-class: primary, center, middle
+class: primary
+
+## Duas amostragens
 
 ```{r}
 set.seed(2)
@@ -164,7 +169,8 @@ amplitude1 <- (ci1[2] - ci1[1])/w1
 amplitude2 <- (ci2[2] - ci2[1])/w2
 ```
 
-```{r ci, fig.height=3.5, dev='png', dpi = 600, fig.show='hold'}
+.center2[
+```{r ci, fig.height=5, out.width='100%', dev='png', dpi = 600, fig.show='hold'}
 p1 <- xcnorm(.8, mean = w1, sd = se1, return = 'plot', system = 'gg') %>%
   gf_labs(title = bquote(hat(mu) == .(round(w1, 0)) ~ "," ~ sigma[bar(x)] == .(round(se1,0))),
           subtitle = bquote(n == .(n1)),
@@ -174,11 +180,14 @@ p2 <- xcnorm(.8, mean = w2, sd = se2, return = 'plot', system = 'gg') %>%
           subtitle = bquote(n == .(n2)),
           x = "VU")
 legend_b <- get_legend(
-  p1 + guides())
+  p1 + guides(color = guide_legend(nrow = 1)) +
+    theme(legend.position = "bottom"))
 plot_grid(p1 + theme(legend.position="none"), 
           p2 + theme(legend.position="none"),
-          nrow = 1, legend_b, align = 'hv')
+          legend_b,
+          ncol = 2, rel_heights = c(1, .1))
 ```
+]
 
 ---
 class: primary, center, middle
@@ -204,14 +213,17 @@ plot_grid(p1 + theme(legend.position="bottom",
 ---
 class: primary
 
-|População| Amostragem  | $\hat{\mu}$ | $\sigma_{\bar{x}}$   | IC             | IP             | $p_{CAinf}$                                              |
-|:--------|------------:|-----------:|---------------------:|:--------------:|:--------------:|---------------------------------------------------------:|
-| P1      | 50          | `r brf(w1)`| `r brf(s1)`          | [`r brf(ci1)`] | [`r brf(cp1)`] |`r pct(pt((.85*w1-w1)/sqrt(s1^2+se1^2), df=length(vu1)))` |
-| P2      | 250         | `r brf(w2)`| `r brf(s2)`          | [`r brf(ci2)`] | [`r brf(cp2)`] |`r pct(pt((.85*w2-w2)/sqrt(s2^2+se2^2), df=length(vu2)))` |
+## Resumindo
+
+|População| $n$ | $\hat{\mu}$| $\sigma_{\bar{x}}$   | IC             | IP             |   $CA_{inf}$   | $p_{CAinf}$                                              |
+|:--------|----:|-----------:|---------------------:|:--------------:|:--------------:|---------------:|--------------------------------------------------------:|
+| P1      | 50  | `r brf(w1)`| `r brf(se1)`          | [`r brf(ci1)`] | [`r brf(cp1)`] |`r brf(.85*w1)` |`r pct(pt((.85*w1-w1)/sqrt(s1^2+se1^2), df=length(vu1)))` |
+| P1      | 250 | `r brf(w2)`| `r brf(se2)`          | [`r brf(ci2)`] | [`r brf(cp2)`] |`r brf(.85*w2)` |`r pct(pt((.85*w2-w2)/sqrt(s2^2+se2^2), df=length(vu2)))` |
 
 
 ---
 class: primary, center, middle
+
 
 ## Regressão Linear
 
@@ -231,9 +243,11 @@ condicional de $Y|X$.
 
 $$\mathbb{E}(Y|X) = X\beta + \epsilon$$ 
 
-Ou
+Como $\mathbb{E}(\epsilon) = 0$
 
-$$y = \hat \mu(X) = X\beta + \epsilon$$
+$$\hat \mu(Y|X) = X\beta \\
+\epsilon = Y - \hat \mu(Y|X) \\
+Y =  X\beta + \epsilon$$
 
 ---
 class: primary
@@ -245,20 +259,26 @@ Satisfeitas as hipóteses da inferências estatística clássica, *i.e.*, homosc
 
 ### Estimativa Central
 
-$$\hat y_0 = x_0^T \hat \beta$$
+$$\hat y_0 = \hat \mu(x_0)= x_0^T \hat \beta$$
 ### Erro-padrão
 
 $$se(\hat y_0) = se(x_0^T \hat \beta) = \sqrt{\text{Var}(x_0^T\hat\beta)} =   \sqrt{\hat \sigma^2 x_0^T (X^TX)^{-1}x_0}$$
 ### Intervalo de Confiança
 
 $$IC = \hat y_0 \pm t_{0, 90, n-k-1} \hat \sigma \sqrt{x_0^T (X^TX)^{-1}x_0}$$
+
 ---
 class: primary
 
 ### Intervalo de Predição
 
-Para o intervalo de predição, adiciona-se à incerteza do estimador, a variância da 
-população:
+Na predição de valores, estamos interessado na variância da população como um 
+todo e não apenas na variância da média condicional, ou seja, queremos saber:
+
+$$\text{Var}(y) = \text{Var}(x_0 \hat \beta + \epsilon)$$
+
+Portanto, para o cálculo do intervalo de predição, adiciona-se à incerteza do 
+estimador, a variância da população:
 
 $$IP = \hat y_0 \pm t_{0, 90, n-k-1} \sqrt{\text{Var}(x_0^T\hat\beta + \epsilon)}$$
 Se os erros forem independentes, então pode-se concluir que $\text{Var}(x_o^T \hat \beta + \epsilon) = \text{Var}(x_o^T \hat \beta) + \text{Var}(\epsilon)$.
@@ -277,6 +297,7 @@ class: primary, center, middle
 ---
 class: primary, center, middle
 
+
 ## NBR 14.653-02
 
 
@@ -285,7 +306,7 @@ class: primary
 
 ### Estimativa de tendência central
 
-Quando for adotada a estimativa de tendência central para a avaliação, o intervalo de valores admissíveis deve estar limitado simultaneamente: 
+Quando for adotada a estimativa de tendência central para a avaliação, o intervalo de valores admissíveis deve estar limitado **simultaneamente**: 
 
 A) ao intervalo de predição ou ao intervalo de confiança de 80 % para a estimativa de tendência central; 
 
@@ -301,7 +322,8 @@ class: primary
 
 ### Valor arbitrado
 
-Quando for adotado o valor arbitrado, o intervalo de valores admissíveis deve estar limitado simultaneamente: 
+Quando for adotado o valor arbitrado, o intervalo de valores admissíveis deve 
+estar limitado **simultaneamente**: 
 
 A) ao intervalo em torno do valor arbitrado com amplitude igual à do intervalo de predição ou ao intervalo de confiança de 80% para a estimativa de tendência central; 
 
@@ -332,6 +354,204 @@ knitr::include_graphics(c('Cenario_1.png', 'Cenario_2.png', 'Cenario_3.png'))
 # plot_grid(p1, p2, p3, nrow = 1)
 ```
 ]
+
+---
+class: primary, center, middle
+
+
+# Estudos de casos
+
+---
+class: primary
+
+### Dados de mercado
+
+```{r coefficients}
+data("centro_2015")
+centro_2015$padrao <- as.numeric(centro_2015$padrao)
+fit <- lm(log(valor) ~ area_total + quartos + suites + garagens +
+            log(dist_b_mar) + rec(padrao),
+          data = centro_2015, subset = -c(31, 39))
+pfit <- prettify(summary(fit), level = 0.80)
+kable(pfit, digits = 3, booktabs = T, 
+      caption = "Coeficientes e estatísticas do modelo adotado.") %>% 
+  kable_styling(latex_options = c("striped", "scale_down"))
+```
+
+
+--
+
+```{r}
+p <- predict(fit, newdata = centro_2015[52, ], 
+             interval = "confidence", level = 0.80, se.fit = TRUE)
+P <- exp(p$fit)
+p1 <- predict(fit, newdata = centro_2015[52, ], 
+              interval = "prediction", level = 0.80, se.fit = TRUE)
+ca <- campo_arbitrio(P)
+```
+
+
+***
+
+| Estimativa           |              Intervalo de valores admissíveis     |  Campo de Arbítrio                                      |
+|---------------------:|--------------------------------------------------:|--------------------------------------------------------:|
+|R$`r brf(P[, "fit"])` |  [R$`r brf(P[, "lwr"])`; R$`r brf(P[, "upr"])`]    | [R$`r brf(ca[, "C.A.I."])`; R$`r brf(ca[, "C.A.S."])`] |
+|R$1.100.000,00        |  [R$1.060.973,75; R$`r brf(ca[, "C.A.S."])`        | [R$`r brf(ca[, "C.A.I."])`; R$`r brf(ca[, "C.A.S."])`] |
+
+---
+class: primary
+
+## Probabilidades associadas
+  
+  
+#### Média
+
+```{r}
+t_inf <- (log(1060973.75)-p$fit[, "fit"])/p$se.fit
+t_arb <- (log(1100000)-p$fit[, "fit"])/p$se.fit
+t_sup <- (log(ca[, "C.A.S."]) - p$fit[, "fit"])/p$se.fit
+```
+
+| Valor        | $t$           | $p$                    |
+|-------------:|---------------|-----------------------:|
+| Inferior     | `r brf(t_inf)`|`r pct(1-pt(t_inf, 41))`|
+| Arbitrado    | `r brf(t_arb)`|`r pct(1-pt(t_arb, 41))`|
+| Superior     | `r brf(t_sup)`|`r pct(1-pt(t_sup, 41))`|
+
+--
+
+#### População
+
+```{r}
+t_infCA <- (log(ca[, "C.A.I."]) - p$fit[, "fit"])/sqrt((p$residual.scale^2 + p$se.fit^2))
+t_supCA <- (log(ca[, "C.A.S."]) - p$fit[, "fit"])/sqrt((p$residual.scale^2 + p$se.fit^2))
+t_arb <- (log(1100000) - p$fit[, "fit"])/sqrt((p$residual.scale^2 + p$se.fit^2))
+```
+
+| Valor        | Valor                   | $t$                    | $p$                      |
+|-------------:|-------------------------|-----------------------:|-------------------------:| 
+| Inferior (CA)| `r brf(ca[, "C.A.I."])` |`r brf(t_infCA)`        |`r pct(pt(t_infCA, 41))`  |
+| Arbitrado    | 1.100.000,00            |`r brf(t_arb)`          |`r pct(pt(t_arb, 41))`    |
+| Superior (CA)| `r brf(ca[, "C.A.S."])` |`r brf(t_supCA)`        |`r pct(pt(t_supCA, 41))`  |
+
+---
+class: primary
+
+## Regressão Quantílica
+
+```{r}
+tau <- pt(t_arb, 41)
+rqfit <- rq(log(valor) ~ area_total + quartos + suites + garagens +
+            log(dist_b_mar) + rec(padrao),
+          data = centro_2015, tau = .725)
+p <- predict(rqfit, newdata = centro_2015[52, ], 
+             interval = "confidence", level = 0.80)
+P <- exp(p)
+```
+
+| Quantílica (72,5%)     | NBR                    |
+|-----------------------:|-----------------------:|
+| `r brf(P[, "fit"])`    | 1.100.000,00           |
+| `r brf(P[, "lower"])`  | 1.060.973,75           |
+| `r brf(P[, "higher"])` | `r brf(ca[, "C.A.S."])`|
+
+
+---
+class: primary
+
+#### Dados com distribuição Normal
+
+$\hat \mu(x_0) =$ R$1.000.000,00. Hipóteses sobre a inferência: $\mathcal{N}$, $t_{40}$, $t_{10}$ 
+
+```{r}
+# Para distribuição Normal
+yhat <- 10^6
+se1 <- .15*yhat/qnorm(.9)
+se2 <- .20*yhat/qnorm(.9)
+se3 <- .25*yhat/qnorm(.9)
+zinf1 <- -.15*yhat/se1
+zinf2 <- -.15*yhat/se2
+zinf3 <- -.15*yhat/se3
+zsup1 <- .15*yhat/se1
+zsup2 <- .15*yhat/se2
+zsup3 <- .15*yhat/se3
+qinf1 <- pnorm(zinf1)
+qinf2 <- pnorm(zinf2)
+qinf3 <- pnorm(zinf3)
+qsup1 <- pnorm(zsup1)
+qsup2 <- pnorm(zsup2)
+qsup3 <- pnorm(zsup3)
+```
+
+
+|Amplitude IP| $\sqrt{\sigma^2+s.e.^2(\hat y_o)}$|Semi-amplitude do CA| $Z_{inf}$    | $Z_{sup}$    | $p_{inf}$    | $p_{sup}$    |  
+|:----------:|----------------------------------:|-------------------:|-------------:|-------------:|-------------:|-------------:|
+| 30%        |`r brf(se1)`                       | 150.000            |`r brf(zinf1)`|`r brf(zsup1)`|`r pct(qinf1)`|`r pct(qsup1)`|
+| 40%        |`r brf(se2)`                       | 150.000            |`r brf(zinf2)`|`r brf(zsup2)`|`r pct(qinf2)`|`r pct(qsup2)`|
+| 50%        |`r brf(se3)`                       | 150.000            |`r brf(zinf3)`|`r brf(zsup3)`|`r pct(qinf3)`|`r pct(qsup3)`|
+
+```{r}
+# Para distribuição t com 40 graus de liberdade
+yhat <- 10^6
+se1 <- .15*yhat/qt(.9, 40)
+se2 <- .20*yhat/qt(.9, 40)
+se3 <- .25*yhat/qt(.9, 40)
+tinf1 <- -.15*yhat/se1
+tinf2 <- -.15*yhat/se2
+tinf3 <- -.15*yhat/se3
+tsup1 <- .15*yhat/se1
+tsup2 <- .15*yhat/se2
+tsup3 <- .15*yhat/se3
+qinf1 <- pt(tinf1, 40)
+qinf2 <- pt(tinf2, 40)
+qinf3 <- pt(tinf3, 40)
+qsup1 <- pt(tsup1, 40)
+qsup2 <- pt(tsup2, 40)
+qsup3 <- pt(tsup3, 40)
+```
+
+***
+
+|Amplitude IP| $\sqrt{\sigma^2+s.e.^2(\hat y_o)}$|Semi-amplitude do CA| $t_{inf}$    | $t_{sup}$    | $p_{inf}$         | $p_{sup}$    |  
+|:----------:|----------------------------------:|-------------------:|-------------:|-------------:|------------------:|-------------:|
+| 30%        |`r brf(se1)`                        | 150.000            |`r brf(tinf1)` |`r brf(tsup1)` |`r pct(qinf1)`     |`r pct(qsup1)`|
+| 40%        |`r brf(se2)`                        | 150.000            |`r brf(tinf2)` |`r brf(tsup2)` |`r pct(qinf2)`     |`r pct(qsup2)`|
+| 50%        |`r brf(se3)`                        | 150.000            |`r brf(tinf3)` |`r brf(tsup3)` |`r pct(qinf3)`     |`r pct(qsup3)`|
+
+```{r}
+# Para distribuição t com 10 graus de liberdade
+yhat <- 10^6
+se1 <- .15*yhat/qt(.9, 10)
+se2 <- .20*yhat/qt(.9, 10)
+se3 <- .25*yhat/qt(.9, 10)
+tinf1 <- -.15*yhat/se1
+tinf2 <- -.15*yhat/se2
+tinf3 <- -.15*yhat/se3
+tsup1 <- .15*yhat/se1
+tsup2 <- .15*yhat/se2
+tsup3 <- .15*yhat/se3
+qinf1 <- pt(tinf1, 10)
+qinf2 <- pt(tinf2, 10)
+qinf3 <- pt(tinf3, 10)
+qsup1 <- pt(tsup1, 10)
+qsup2 <- pt(tsup2, 10)
+qsup3 <- pt(tsup3, 10)
+```
+
+***
+
+|Amplitude IP| $\sqrt{\sigma^2+s.e.^2(\hat y_o)}$|Semi-amplitude do CA| $t_{inf}$         | $t_{sup}$    | $p_{inf}$    | $p_{sup}$    |  
+|:----------:|----------------------------------:|-------------------:|------------------:|-------------:|-------------:|-------------:|
+| 30%        |`r brf(se1)`                        | 150.000            |`r brf(tinf1)`      |`r brf(tsup1)` |`r pct(qinf1)`|`r pct(qsup1)`|
+| 40%        |`r brf(se2)`                        | 150.000            |`r brf(tinf2)`      |`r brf(tsup2)` |`r pct(qinf2)`|`r pct(qsup2)`|
+| 50%        |`r brf(se3)`                        | 150.000            |`r brf(tinf3)`      |`r brf(tsup3)` |`r pct(qinf3)`|`r pct(qsup3)`|
+
+
+---
+class: primary, center, middle
+
+
+# Dados criados randomicamente
 
 ---
 background-image: url(CAs.png)
@@ -371,6 +591,7 @@ kable(100*probs, format = 'html', digits = 1,
 
 ---
 class: primary, center, middle
+
 
 # Obrigado!
 
